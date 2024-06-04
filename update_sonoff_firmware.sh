@@ -23,6 +23,7 @@ main () {
        else
           shift
           check_if_sonoff
+          prepare_env
           prepare_python
           prepare_tmp_dir
           download_serial_bootloader
@@ -47,6 +48,12 @@ check_if_sonoff () {
        log
        exit 1
     fi
+}
+
+prepare_env() {
+    python3 -m venv ./venv-for-firmware-update
+    chmod a+x -R venv-for-firmware-update
+    ./venv-for-firmware-update/bin/activate   
 }
 
 prepare_tmp_dir() {
@@ -132,7 +139,7 @@ download_firmware () {
 
 flash_firmware () {
     # for more options see: https://github.com/JelmerT/cc2538-bsl#cc26xx-and-cc13xx
-    python $basepath/$tmp/cc2538-bsl.py -evw -p \
+    ./venv-for-firmware-update/bin/python $basepath/$tmp/cc2538-bsl.py -evw -p \
         /dev/ttyUSB$3 \
         --bootloader-sonoff-usb \
         $basepath/$tmp/$1/*$2*.hex
@@ -179,12 +186,12 @@ prepare_python () {
     log "Check python dependencies"
     log
     dep_array=("pyserial" "intelhex" "python-magic")
-    pip_array=( $(pip list | grep -v "^Package *Version$" | grep -v "^-*$" | cut -d ' ' -f 1) )
+    pip_array=( $(./venv-for-firmware-update/bin/pip list | grep -v "^Package *Version$" | grep -v "^-*$" | cut -d ' ' -f 1) )
 
     for dep in ${dep_array[@]}; do
        echo "${pip_array[@]}" | grep -q "$dep" &&  \
           log "Already installed $dep" || \
-          pip install $dep
+          ./venv-for-firmware-update/bin/pip install $dep
     done
     log
 }
